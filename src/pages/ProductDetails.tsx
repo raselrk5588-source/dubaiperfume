@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, Star, Share2, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Heart, Star, Share2, ShoppingBag, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import './ProductDetails.css';
 
@@ -8,17 +8,28 @@ const ProductDetails: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isFavorite, setIsFavorite] = useState(false);
-  const { addToCart } = useCart();
+  const { products, addToCart } = useCart();
+  const productData = products.find(p => p.id === id);
 
-  // Mock data fetching based on ID
+  if (!productData) {
+    return (
+      <div className="product-details-page animate-fade-in" style={{padding: '20px', textAlign: 'center'}}>
+        <div className="pd-header">
+          <button className="icon-button glass" onClick={() => navigate(-1)}>
+            <ArrowLeft size={24} color="var(--color-text)" />
+          </button>
+        </div>
+        <h2 style={{marginTop: '40px', color: 'white'}}>Product not found</h2>
+      </div>
+    );
+  }
+
+  // Merge with mock details for fields not in DB
   const product = {
-    name: 'Oud Majestic',
-    brand: 'Dubai Luxury',
-    price: 1250,
-    description: 'A masterpiece of olfactory art, Oud Majestic blends the rarest Cambodian oud with delicate Taif rose and warm amber. Designed for the elite, this fragrance leaves an unforgettable trail of royal elegance.',
-    images: ['/perfume1.png', '/perfume2.png', '/perfume1.png'],
-    rating: 4.9,
-    reviews: 128,
+    ...productData,
+    description: 'A masterpiece of olfactory art, blending rare ingredients to create an unforgettable trail of royal elegance. Long-lasting and luxurious.',
+    images: [productData.image],
+    reviews: Math.floor(Math.random() * 200) + 50,
     notes: {
       top: ['Saffron', 'Nutmeg', 'Lavender'],
       heart: ['Agarwood (Oud)', 'Taif Rose', 'Patchouli'],
@@ -67,7 +78,17 @@ const ProductDetails: React.FC = () => {
             <span>{product.rating}</span>
             <span className="reviews-count">({product.reviews} reviews)</span>
           </div>
-          <div className="pd-price text-gold">AED {product.price}</div>
+          <div className="pd-price text-gold" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>AED {product.price}</span>
+            {product.originalPrice && (
+              <>
+                <span style={{ textDecoration: 'line-through', color: '#888', fontSize: '0.9rem' }}>AED {product.originalPrice}</span>
+                <span style={{ color: '#2ecc71', fontSize: '0.8rem', fontWeight: 800, backgroundColor: 'rgba(46, 204, 113, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                  -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="pd-description">
@@ -100,16 +121,22 @@ const ProductDetails: React.FC = () => {
         </div>
         <button 
           className="buy-now-btn bg-gold radius-lg"
-          onClick={() => addToCart({
-            id: id || '0',
-            name: product.name,
-            brand: product.brand,
-            price: product.price,
-            image: product.images[0]
-          })}
+          style={product.isStockOut ? { background: '#333', color: '#888', cursor: 'not-allowed' } : {}}
+          disabled={product.isStockOut}
+          onClick={() => {
+            if (!product.isStockOut) {
+              addToCart({
+                id: id || '0',
+                name: product.name,
+                brand: product.brand,
+                price: product.price,
+                image: product.images[0]
+              });
+            }
+          }}
         >
-          <ShoppingBag size={20} />
-          Add to Cart
+          {product.isStockOut ? <X size={20} /> : <ShoppingBag size={20} />}
+          {product.isStockOut ? 'Out of Stock' : 'Add to Cart'}
         </button>
       </div>
     </div>

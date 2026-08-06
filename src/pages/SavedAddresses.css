@@ -1,0 +1,139 @@
+.addresses-page {
+  padding: 20px;
+  min-height: 100vh;
+  padding-bottom: 100px;
+}
+
+.addresses-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.addresses-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.address-card {
+  width: 100%;
+  max-width: 500px;
+  padding: 30px 20px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.address-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.address-title {
+  color: white;
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+}
+
+.address-subtitle {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.gps-btn {
+  width: 100%;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--color-accent);
+  background: rgba(212, 175, 55, 0.1);
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 24px;
+  transition: all 0.3s ease;
+}
+
+.gps-btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+}
+
+.gps-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.input-wrapper {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.input-wrapper label {
+  display: block;
+  color: white;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.address-textarea {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.3);
+  color: white;
+  font-size: 1rem;
+  font-family: var(--font-main);
+  resize: vertical;
+  transition: border-color 0.3s;
+}
+
+.address-textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.helper-text {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  margin-top: 8px;
+}
+
+.save-btn {
+  width: 100%;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: none;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: black;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.save-btn.success {
+  background: #2ecc71;
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

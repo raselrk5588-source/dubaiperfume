@@ -6,7 +6,10 @@ import './Orders.css';
 
 const Orders: React.FC = () => {
   const navigate = useNavigate();
-  const { orders } = useCart();
+  const { orders, customerPhone } = useCart();
+  
+  // Filter orders to only show those belonging to the logged-in customer's phone
+  const myOrders = orders.filter(order => order.phone === customerPhone);
 
   return (
     <div className="orders-page animate-fade-in">
@@ -19,14 +22,14 @@ const Orders: React.FC = () => {
       </div>
 
       <div className="orders-list">
-        {orders.length === 0 ? (
+        {myOrders.length === 0 ? (
           <div className="empty-orders glass">
             <Package size={48} color="var(--color-text-secondary)" />
             <h2>No Orders Yet</h2>
             <p>You haven't placed any orders. Start shopping to see them here.</p>
           </div>
         ) : (
-          orders.map(order => (
+          myOrders.map(order => (
             <div key={order.id} className="order-card glass hover-scale">
               <div className="order-card-header">
                 <span className="order-id">{order.id}</span>

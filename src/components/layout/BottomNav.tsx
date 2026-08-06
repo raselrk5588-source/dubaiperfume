@@ -1,14 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, ShoppingBag, User } from 'lucide-react';
+import { Home, ShoppingBag, User, LogIn } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import './BottomNav.css';
 
 const BottomNav: React.FC = () => {
-  const { totalItems } = useCart();
+  const { totalItems, customerName } = useCart();
 
   return (
-    <nav className="bottom-nav glass">
+    <nav className="bottom-nav">
       <ul className="nav-list">
         <li className="nav-item">
           <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
@@ -28,8 +28,8 @@ const BottomNav: React.FC = () => {
         </li>
         <li className="nav-item">
           <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <User size={22} />
-            <span>Profile</span>
+            {customerName ? <User size={22} /> : <LogIn size={22} />}
+            <span>{customerName ? 'Profile' : 'Login'}</span>
           </NavLink>
         </li>
       </ul>

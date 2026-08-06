@@ -12,6 +12,7 @@ export interface Product {
   image: string;
   rating: number;
   isNew?: boolean;
+  isStockOut?: boolean;
 }
 
 export interface CartItem {
@@ -31,6 +32,16 @@ export interface Order {
   status: 'Processing' | 'Shipped' | 'Delivered';
   address: string;
   phone: string;
+  customerName: string;
+}
+
+export interface AppNotification {
+  id: string;
+  phone: string;
+  title: string;
+  message: string;
+  read: boolean;
+  date: string;
 }
 
 interface CartContextType {
@@ -40,11 +51,21 @@ interface CartContextType {
   addToCart: (item: Omit<CartItem, 'quantity'>) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
-  placeOrder: (address: string, phone: string) => void;
+  placeOrder: (address: string, phone: string, name?: string) => void;
   updateOrderStatus: (id: string, status: 'Processing' | 'Shipped' | 'Delivered') => void;
   addProduct: (product: Omit<Product, 'id'>) => void;
+  addMultipleProducts: (products: Omit<Product, 'id'>[]) => void;
   editProduct: (id: string, updates: Partial<Product>) => void;
+  deleteProduct: (id: string | number) => void;
   totalItems: number;
+  customerName: string | null;
+  customerPhone: string | null;
+  customerAddress: string | null;
+  notifications: AppNotification[];
+  loginCustomer: (name: string, phone: string) => void;
+  saveCustomerAddress: (address: string) => void;
+  logoutCustomer: () => void;
+  markNotificationsAsRead: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -61,6 +82,31 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [customerName, setCustomerName] = useState<string | null>(localStorage.getItem('customerName'));
+  const [customerPhone, setCustomerPhone] = useState<string | null>(localStorage.getItem('customerPhone'));
+  const [customerAddress, setCustomerAddress] = useState<string | null>(localStorage.getItem('customerAddress'));
+
+  const loginCustomer = (name: string, phone: string) => {
+    localStorage.setItem('customerName', name);
+    localStorage.setItem('customerPhone', phone);
+    setCustomerName(name);
+    setCustomerPhone(phone);
+  };
+
+  const saveCustomerAddress = (address: string) => {
+    localStorage.setItem('customerAddress', address);
+    setCustomerAddress(address);
+  };
+
+  const logoutCustomer = () => {
+    localStorage.removeItem('customerName');
+    localStorage.removeItem('customerPhone');
+    localStorage.removeItem('customerAddress');
+    setCustomerName(null);
+    setCustomerPhone(null);
+    setCustomerAddress(null);
+  };
 
   // Listen to Firebase for real-time data
   useEffect(() => {
@@ -88,9 +134,20 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     });
 
+    // Notifications listener
+    const notificationsRef = ref(db, 'notifications');
+    const unsubNotifications = onValue(notificationsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const notifsArray = Array.isArray(data) ? data.filter(Boolean) : Object.values(data) as AppNotification[];
+        setNotifications(notifsArray);
+      }
+    });
+
     return () => {
       unsubProducts();
       unsubOrders();
+      unsubNotifications();
     };
   }, []);
 
@@ -134,7 +191,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const placeOrder = (address: string, phone: string) => {
+  const placeOrder = (address: string, phone: string, name?: string) => {
     if (cart.length === 0) return;
     
     const newOrder: Order = {
@@ -144,7 +201,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       total: cart.reduce((sum, item) => sum + item.price * item.quantity, 0) + 50,
       status: 'Processing',
       address,
-      phone
+      phone,
+      customerName: name || customerName || 'Guest'
     };
     
     saveOrders([newOrder, ...orders]);
@@ -152,8 +210,33 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateOrderStatus = (id: string, status: 'Processing' | 'Shipped' | 'Delivered') => {
-    const updated = orders.map(order => order.id === id ? { ...order, status } : order);
-    saveOrders(updated);
+    const updatedOrders = orders.map(order => order.id === id ? { ...order, status } : order);
+    saveOrders(updatedOrders);
+    
+    // Create a notification for the user
+    const orderToUpdate = orders.find(o => o.id === id);
+    if (orderToUpdate && orderToUpdate.phone) {
+      const newNotif: AppNotification = {
+        id: `NOTIF-${Math.floor(Math.random() * 100000)}`,
+        phone: orderToUpdate.phone,
+        title: 'Order Status Updated',
+        message: `Your order ${id} is now ${status}.`,
+        read: false,
+        date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()
+      };
+      const updatedNotifs = [newNotif, ...notifications];
+      setNotifications(updatedNotifs);
+      set(ref(db, 'notifications'), updatedNotifs);
+    }
+  };
+
+  const markNotificationsAsRead = () => {
+    if (!customerPhone) return;
+    const updatedNotifs = notifications.map(n => 
+      n.phone === customerPhone ? { ...n, read: true } : n
+    );
+    setNotifications(updatedNotifs);
+    set(ref(db, 'notifications'), updatedNotifs);
   };
 
   const addProduct = (product: Omit<Product, 'id'>) => {
@@ -161,16 +244,30 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     saveProducts([{ ...product, id: newId }, ...products]);
   };
 
+  const addMultipleProducts = (newProducts: Omit<Product, 'id'>[]) => {
+    const timestamp = Date.now();
+    const productsToAdd = newProducts.map((p, index) => ({
+      ...p,
+      id: (timestamp + index).toString()
+    }));
+    saveProducts([...productsToAdd, ...products]);
+  };
+
   const editProduct = (id: string, updates: Partial<Product>) => {
-    const updated = products.map(p => p.id === id ? { ...p, ...updates } : p);
-    saveProducts(updated);
+    const updatedProducts = products.map(p => p.id === id || p.id === Number(id) ? { ...p, ...updates } : p);
+    saveProducts(updatedProducts);
+  };
+
+  const deleteProduct = (id: string | number) => {
+    const updatedProducts = products.filter(p => p.id !== id && p.id !== Number(id) && p.id !== String(id));
+    saveProducts(updatedProducts);
   };
 
   return (
     <CartContext.Provider value={{ 
-      cart, orders, products, 
-      addToCart, removeFromCart, updateQuantity, placeOrder, updateOrderStatus, addProduct, editProduct, 
-      totalItems 
+      cart, orders, products, notifications,
+      addToCart, removeFromCart, updateQuantity, placeOrder, updateOrderStatus, addProduct, addMultipleProducts, editProduct, deleteProduct,
+      totalItems, customerName, customerPhone, customerAddress, loginCustomer, saveCustomerAddress, logoutCustomer, markNotificationsAsRead
     }}>
       {children}
     </CartContext.Provider>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ProductCard from '../components/ProductCard';
 import { useCart } from '../context/CartContext';
 import './Home.css';
@@ -7,6 +7,8 @@ const CATEGORIES = ['All', 'Oud', 'Floral', 'Woody', 'Spicy', 'Citrus'];
 
 const Home: React.FC = () => {
   const { products } = useCart();
+  const [showAllTrending, setShowAllTrending] = useState(false);
+  const [showAllLuxury, setShowAllLuxury] = useState(false);
   
   return (
     <div className="home-page animate-fade-in">
@@ -39,11 +41,13 @@ const Home: React.FC = () => {
       <section className="product-section">
         <div className="section-header">
           <h2 className="section-title">Trending Now</h2>
-          <button className="view-all text-gold">See All</button>
+          <button className="view-all text-gold" onClick={() => setShowAllTrending(!showAllTrending)}>
+            {showAllTrending ? 'Show Less' : 'See All'}
+          </button>
         </div>
         <div className="product-grid">
-          {products.slice(0, 2).map(product => (
-            <ProductCard key={product.id} {...product} />
+          {(showAllTrending ? products : products.slice(0, 2)).map(product => (
+            <ProductCard key={`trending-${product.id}`} {...product} />
           ))}
         </div>
       </section>
@@ -52,11 +56,13 @@ const Home: React.FC = () => {
       <section className="product-section">
         <div className="section-header">
           <h2 className="section-title">Dubai Luxury</h2>
-          <button className="view-all text-gold">See All</button>
+          <button className="view-all text-gold" onClick={() => setShowAllLuxury(!showAllLuxury)}>
+            {showAllLuxury ? 'Show Less' : 'See All'}
+          </button>
         </div>
-        <div className="horizontal-scroll">
+        <div className={showAllLuxury ? "product-grid" : "horizontal-scroll"}>
           {products.map(product => (
-            <div className="scroll-item" key={`dl-${product.id}`}>
+            <div className={showAllLuxury ? "" : "scroll-item"} key={`dl-${product.id}`}>
               <ProductCard {...product} />
             </div>
           ))}

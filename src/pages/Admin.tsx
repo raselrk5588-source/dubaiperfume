@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { MapPin, Phone, Package, DollarSign, TrendingUp, BarChart3, Lock, User, LogOut, Tag, Edit, ShoppingBag, ChevronRight, Plus, X } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { MapPin, Phone, Package, DollarSign, TrendingUp, BarChart3, Lock, User, LogOut, Tag, Edit, ShoppingBag, ChevronRight, Plus, X, Upload, Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import type { Product } from '../context/CartContext';
 import './Admin.css';
 
 const Admin: React.FC = () => {
-  const { orders, products, updateOrderStatus, addProduct, editProduct } = useCart();
-  const [filter, setFilter] = useState<'All' | 'Today' | 'Week'>('All');
+  const { orders, products, updateOrderStatus, addProduct, editProduct, addMultipleProducts, deleteProduct } = useCart();
+  const [filter, setFilter] = useState<'All' | 'Today' | 'Week' | 'Delivered'>('All');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products'>('dashboard');
 
   // Product form state
@@ -15,13 +15,129 @@ const Admin: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [prodForm, setProdForm] = useState({ name: '', brand: '', price: '', originalPrice: '', image: '/perfume1.png' });
 
+  // Bulk Upload state
+  const [showBulkForm, setShowBulkForm] = useState(false);
+  const [bulkProducts, setBulkProducts] = useState<any[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleBulkFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const files = Array.from(e.target.files);
+    const newBulkProducts: any[] = [];
+
+    for (let file of files) {
+      // Create a default name from filename (remove extension and replace dashes/underscores)
+      let defaultName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      defaultName = defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
+      
+      try {
+        const compressedBase64 = await compressImage(file);
+        newBulkProducts.push({
+          id: Date.now() + Math.random(),
+          name: defaultName,
+          brand: 'Dubai Luxury', // default brand
+          price: '',
+          image: compressedBase64,
+          rating: 5.0,
+          isNew: true
+        });
+      } catch (err) {
+        console.error("Error compressing image:", err);
+      }
+    }
+
+    setBulkProducts(newBulkProducts);
+    setShowBulkForm(true);
+    // Reset file input so same files can be selected again if needed
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400; // Compress heavily for DB
+          const MAX_HEIGHT = 400;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7)); // 70% quality jpeg
+        };
+        img.onerror = (error) => reject(error);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const updateBulkProduct = (index: number, field: string, value: string) => {
+    const updated = [...bulkProducts];
+    updated[index][field] = value;
+    setBulkProducts(updated);
+  };
+
+  const handleSaveBulk = () => {
+    const validProducts = bulkProducts
+      .filter(p => p.name.trim() !== '' && p.price !== '')
+      .map(p => ({
+        name: p.name,
+        brand: p.brand,
+        price: Number(p.price),
+        image: p.image,
+        rating: p.rating,
+        isNew: p.isNew
+      }));
+      
+    if (validProducts.length > 0) {
+      addMultipleProducts(validProducts);
+    }
+    setShowBulkForm(false);
+    setBulkProducts([]);
+  };
+
+  const handleSingleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    try {
+      const compressedBase64 = await compressImage(e.target.files[0]);
+      setProdForm({ ...prodForm, image: compressedBase64 });
+    } catch (err) {
+      console.error("Error compressing image:", err);
+    }
+  };
+
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
+    const regular = Number(prodForm.price);
+    const offer = prodForm.originalPrice ? Number(prodForm.originalPrice) : undefined;
+    
+    const actualSellingPrice = offer ? offer : regular;
+    const actualOriginalPrice = offer ? regular : undefined;
+
     const data = {
       name: prodForm.name,
       brand: prodForm.brand,
-      price: Number(prodForm.price),
-      originalPrice: prodForm.originalPrice ? Number(prodForm.originalPrice) : undefined,
+      price: actualSellingPrice,
+      originalPrice: actualOriginalPrice,
       image: prodForm.image,
       rating: 5.0
     };
@@ -37,7 +153,9 @@ const Admin: React.FC = () => {
 
   const startEdit = (p: Product) => {
     setEditingId(p.id);
-    setProdForm({ name: p.name, brand: p.brand, price: p.price.toString(), originalPrice: p.originalPrice ? p.originalPrice.toString() : '', image: p.image });
+    const regular = p.originalPrice ? p.originalPrice.toString() : p.price.toString();
+    const offer = p.originalPrice ? p.price.toString() : '';
+    setProdForm({ name: p.name, brand: p.brand, price: regular, originalPrice: offer, image: p.image });
     setShowProductForm(true);
   };
   
@@ -100,8 +218,10 @@ const Admin: React.FC = () => {
 
   // Filter logic
   const filteredOrders = orders.filter(o => {
-    if (filter === 'All') return true;
-    if (filter === 'Today') return o.date === new Date().toLocaleDateString();
+    if (filter === 'All') return o.status !== 'Delivered';
+    if (filter === 'Today') return o.date === new Date().toLocaleDateString() && o.status !== 'Delivered';
+    if (filter === 'Week') return o.status !== 'Delivered'; // Simplified for now
+    if (filter === 'Delivered') return o.status === 'Delivered';
     return true;
   });
 
@@ -195,7 +315,7 @@ const Admin: React.FC = () => {
 
             {/* Stat Cards */}
             <div className="adm-stats-grid">
-              <div className="adm-stat-card">
+              <div className="adm-stat-card" style={{cursor: 'pointer'}} onClick={() => setActiveTab('orders')}>
                 <div className="adm-stat-icon" style={{background: 'rgba(212, 175, 55, 0.15)'}}>
                   <DollarSign size={22} color="#D4AF37" />
                 </div>
@@ -204,7 +324,7 @@ const Admin: React.FC = () => {
                   <span className="adm-stat-value">AED {totalRevenue.toLocaleString()}</span>
                 </div>
               </div>
-              <div className="adm-stat-card">
+              <div className="adm-stat-card" style={{cursor: 'pointer'}} onClick={() => setActiveTab('orders')}>
                 <div className="adm-stat-icon" style={{background: 'rgba(52, 152, 219, 0.15)'}}>
                   <ShoppingBag size={22} color="#3498db" />
                 </div>
@@ -213,7 +333,7 @@ const Admin: React.FC = () => {
                   <span className="adm-stat-value">{filteredOrders.length}</span>
                 </div>
               </div>
-              <div className="adm-stat-card">
+              <div className="adm-stat-card" style={{cursor: 'pointer'}} onClick={() => { setActiveTab('orders'); setFilter('Delivered'); }}>
                 <div className="adm-stat-icon" style={{background: 'rgba(46, 204, 113, 0.15)'}}>
                   <Package size={22} color="#2ecc71" />
                 </div>
@@ -222,7 +342,7 @@ const Admin: React.FC = () => {
                   <span className="adm-stat-value">{deliveredCount}</span>
                 </div>
               </div>
-              <div className="adm-stat-card">
+              <div className="adm-stat-card" style={{cursor: 'pointer'}} onClick={() => setActiveTab('products')}>
                 <div className="adm-stat-icon" style={{background: 'rgba(155, 89, 182, 0.15)'}}>
                   <Tag size={22} color="#9b59b6" />
                 </div>
@@ -282,7 +402,7 @@ const Admin: React.FC = () => {
                 {filteredOrders.slice(0, 3).map(order => (
                   <div key={order.id} className="adm-mini-order">
                     <div className="adm-mini-order-left">
-                      <span className="adm-mini-id">{order.id}</span>
+                      <span className="adm-mini-id">{order.id} - {order.customerName || 'Guest'}</span>
                       <span className="adm-mini-date">{order.date}</span>
                     </div>
                     <span className="adm-mini-amount">AED {order.total}</span>
@@ -298,7 +418,7 @@ const Admin: React.FC = () => {
         {activeTab === 'orders' && (
           <div className="adm-content animate-fade-in">
             <div className="adm-filter-row">
-              {['All', 'Today', 'Week'].map(f => (
+              {['All', 'Today', 'Week', 'Delivered'].map(f => (
                 <button key={f} className={`adm-filter-chip ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f as any)}>{f}</button>
               ))}
             </div>
@@ -330,6 +450,7 @@ const Admin: React.FC = () => {
                     </div>
 
                     <div className="adm-order-customer">
+                      <div className="adm-cust-row"><User size={14} /> {order.customerName || 'Guest'}</div>
                       <div className="adm-cust-row"><MapPin size={14} /> {order.address}</div>
                       <div className="adm-cust-row"><Phone size={14} /> {order.phone}</div>
                     </div>
@@ -360,10 +481,24 @@ const Admin: React.FC = () => {
           <div className="adm-content animate-fade-in">
             <div className="adm-products-header">
               <span className="adm-prod-count">{products.length} Products</span>
-              <button className="adm-add-btn" onClick={() => { setEditingId(null); setProdForm({ name: '', brand: '', price: '', originalPrice: '', image: '/perfume1.png' }); setShowProductForm(true); }}>
-                <Plus size={18} />
-                Add Product
-              </button>
+              <div style={{display: 'flex', gap: '10px'}}>
+                <input 
+                  type="file" 
+                  multiple 
+                  accept="image/*" 
+                  ref={fileInputRef} 
+                  style={{display: 'none'}} 
+                  onChange={handleBulkFileSelect} 
+                />
+                <button className="adm-add-btn adm-btn-secondary" onClick={() => fileInputRef.current?.click()}>
+                  <Upload size={18} />
+                  Bulk Upload
+                </button>
+                <button className="adm-add-btn" onClick={() => { setEditingId(null); setProdForm({ name: '', brand: '', price: '', originalPrice: '', image: '/perfume1.png' }); setShowProductForm(true); }}>
+                  <Plus size={18} />
+                  Add Product
+                </button>
+              </div>
             </div>
 
             {/* Product Table */}
@@ -398,10 +533,27 @@ const Admin: React.FC = () => {
                           )}
                         </td>
                         <td>
-                          <button className="adm-edit-btn" onClick={() => startEdit(p)}>
-                            <Edit size={16} />
-                            Edit
-                          </button>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button 
+                              className="adm-edit-btn"
+                              style={p.isStockOut ? { background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', borderColor: 'rgba(231, 76, 60, 0.2)' } : {}}
+                              onClick={() => editProduct(p.id, { isStockOut: !p.isStockOut })}
+                            >
+                              {p.isStockOut ? 'Out of Stock' : 'In Stock'}
+                            </button>
+                            <button className="adm-edit-btn" onClick={() => startEdit(p)}>
+                              <Edit size={16} />
+                              Edit
+                            </button>
+                            <button 
+                              className="adm-edit-btn" 
+                              style={{ color: '#e74c3c', borderColor: 'rgba(231, 76, 60, 0.2)' }}
+                              onClick={() => { if(window.confirm('Are you sure you want to delete this product?')) deleteProduct(p.id); }}
+                            >
+                              <Trash2 size={16} />
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -441,8 +593,14 @@ const Admin: React.FC = () => {
                     ))}
                   </div>
                   <div className="adm-field" style={{marginTop: '8px'}}>
-                    <label>Or paste image URL</label>
-                    <input type="text" placeholder="https://..." value={prodForm.image} onChange={e => setProdForm({...prodForm, image: e.target.value})} />
+                    <label>Or paste image URL / Upload</label>
+                    <div style={{display: 'flex', gap: '8px'}}>
+                      <input type="text" placeholder="https://..." value={prodForm.image} onChange={e => setProdForm({...prodForm, image: e.target.value})} />
+                      <label className="adm-btn-secondary" style={{cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', display: 'flex', alignItems: 'center'}}>
+                        <Upload size={16} />
+                        <input type="file" accept="image/*" style={{display: 'none'}} onChange={handleSingleFileSelect} />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -457,11 +615,11 @@ const Admin: React.FC = () => {
               </div>
               <div className="adm-form-row">
                 <div className="adm-field">
-                  <label>Price (AED)</label>
+                  <label>Regular Price (AED)</label>
                   <input type="number" placeholder="0" value={prodForm.price} onChange={e => setProdForm({...prodForm, price: e.target.value})} required />
                 </div>
                 <div className="adm-field">
-                  <label>Original Price (Offer)</label>
+                  <label>Offer Price (Optional)</label>
                   <input type="number" placeholder="Optional" value={prodForm.originalPrice} onChange={e => setProdForm({...prodForm, originalPrice: e.target.value})} />
                 </div>
               </div>
@@ -470,6 +628,58 @@ const Admin: React.FC = () => {
                 <button type="submit" className="adm-btn-primary">{editingId ? 'Save Changes' : 'Add Product'}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {showBulkForm && (
+        <div className="adm-modal-overlay" onClick={() => setShowBulkForm(false)}>
+          <div className="adm-modal adm-bulk-modal" onClick={e => e.stopPropagation()}>
+            <div className="adm-modal-header">
+              <h3>Bulk Upload ({bulkProducts.length} items)</h3>
+              <button className="adm-modal-close" onClick={() => setShowBulkForm(false)}><X size={20} /></button>
+            </div>
+            <div className="adm-bulk-list">
+              {bulkProducts.map((p, index) => (
+                <div key={p.id} className="adm-bulk-item">
+                  <img src={p.image} alt={p.name} className="adm-bulk-img" />
+                  <div className="adm-bulk-fields">
+                    <input 
+                      type="text" 
+                      placeholder="Product Name" 
+                      value={p.name} 
+                      onChange={(e) => updateBulkProduct(index, 'name', e.target.value)} 
+                      className="adm-bulk-input"
+                    />
+                    <div className="adm-bulk-row">
+                      <input 
+                        type="text" 
+                        placeholder="Brand" 
+                        value={p.brand} 
+                        onChange={(e) => updateBulkProduct(index, 'brand', e.target.value)} 
+                        className="adm-bulk-input"
+                      />
+                      <input 
+                        type="number" 
+                        placeholder="Price (AED)" 
+                        value={p.price} 
+                        onChange={(e) => updateBulkProduct(index, 'price', e.target.value)} 
+                        className="adm-bulk-input adm-bulk-price"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <button className="adm-bulk-remove" onClick={() => setBulkProducts(bulkProducts.filter((_, i) => i !== index))}>
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="adm-modal-actions">
+              <button type="button" className="adm-btn-secondary" onClick={() => setShowBulkForm(false)}>Cancel</button>
+              <button type="button" className="adm-btn-primary" onClick={handleSaveBulk}>Save All Items</button>
+            </div>
           </div>
         </div>
       )}

@@ -8,6 +8,8 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
+import SavedAddresses from './pages/SavedAddresses';
+import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
 import { CartProvider } from './context/CartContext';
 
@@ -21,6 +23,8 @@ const App: React.FC = () => {
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
             <Route path="orders" element={<Orders />} />
+            <Route path="addresses" element={<SavedAddresses />} />
+            <Route path="notifications" element={<Notifications />} />
             <Route path="profile" element={<Profile />} />
             <Route path="product/:id" element={<ProductDetails />} />
           </Route>

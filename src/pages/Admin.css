@@ -529,8 +529,11 @@
   border-radius: 16px;
   padding: 1.25rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  text-align: center;
+  gap: 0.75rem;
   transition: border-color 0.2s;
 }
 
@@ -551,6 +554,7 @@
 .adm-stat-body {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
 }
 
@@ -772,6 +776,101 @@
 }
 
 /* ---- STATUS SELECT ---- */
+.adm-modal-actions button {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-family: var(--font-main);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+/* ---- BULK UPLOAD MODAL ---- */
+.adm-bulk-modal {
+  max-width: 600px;
+  width: 100%;
+}
+
+.adm-bulk-list {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.adm-bulk-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #1a1a1a;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #222;
+  position: relative;
+}
+
+.adm-bulk-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #111;
+}
+
+.adm-bulk-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.adm-bulk-row {
+  display: flex;
+  gap: 8px;
+}
+
+.adm-bulk-input {
+  width: 100%;
+  background: #111;
+  border: 1px solid #333;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+}
+
+.adm-bulk-input:focus {
+  outline: none;
+  border-color: #D4AF37;
+}
+
+.adm-bulk-price {
+  max-width: 120px;
+}
+
+.adm-bulk-remove {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.adm-bulk-remove:hover {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+}
+
 .adm-status-select {
   padding: 6px 12px;
   border-radius: 100px;
@@ -1269,7 +1368,9 @@
 
   .adm-stat-card {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     gap: 0.75rem;
     padding: 1rem;
   }

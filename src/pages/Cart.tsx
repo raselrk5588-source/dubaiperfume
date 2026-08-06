@@ -6,7 +6,7 @@ import './Cart.css';
 
 const Cart: React.FC = () => {
   const navigate = useNavigate();
-  const { cart, removeFromCart, updateQuantity } = useCart();
+  const { cart, removeFromCart, updateQuantity, customerName, customerPhone } = useCart();
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = 50;
   const total = subtotal + shipping;
@@ -80,7 +80,14 @@ const Cart: React.FC = () => {
 
           <button 
             className="checkout-btn bg-gold radius-lg hover-scale"
-            onClick={() => navigate('/checkout')}
+            onClick={() => {
+              if (!customerName || !customerPhone) {
+                alert("Please complete your profile (Name & Phone) to proceed to checkout.");
+                navigate('/profile');
+              } else {
+                navigate('/checkout');
+              }
+            }}
           >
             Proceed to Checkout
             <ArrowRight size={20} />

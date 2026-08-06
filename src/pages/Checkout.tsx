@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Phone, CreditCard, CheckCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, CreditCard, CheckCircle, User } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import './Checkout.css';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
-  const { cart, totalItems, placeOrder } = useCart();
+  const { cart, totalItems, placeOrder, customerName, customerPhone, customerAddress } = useCart();
   const [isSuccess, setIsSuccess] = useState(false);
-  const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('');
+  const [name, setName] = useState(customerName || '');
+  const [address, setAddress] = useState(customerAddress || '');
+  const [phone, setPhone] = useState(customerPhone || '');
+
+  React.useEffect(() => {
+    if (!customerName || !customerPhone) {
+      // Redirect to profile to complete info before checkout
+      navigate('/profile');
+    }
+  }, [customerName, customerPhone, navigate]);
+
+  if (!customerName || !customerPhone) {
+    return null; // Don't render checkout while redirecting
+  }
   
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = 50;
@@ -17,7 +29,7 @@ const Checkout: React.FC = () => {
 
   const handlePlaceOrder = (e: React.FormEvent) => {
     e.preventDefault();
-    placeOrder(address, phone);
+    placeOrder(address, phone, name);
     setIsSuccess(true);
   };
 
@@ -49,6 +61,18 @@ const Checkout: React.FC = () => {
         <div className="form-section">
           <h3 className="section-subtitle">Delivery Information</h3>
           
+          <div className="input-group glass">
+            <User size={20} color="var(--color-text-secondary)" />
+            <input 
+              type="text" 
+              placeholder="Full Name" 
+              required 
+              className="checkout-input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+
           <div className="input-group glass">
             <MapPin size={20} color="var(--color-text-secondary)" />
             <input 
