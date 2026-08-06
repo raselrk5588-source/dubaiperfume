@@ -1,0 +1,13 @@
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  background-color: var(--color-bg);
+}
+
+.main-content {
+  flex: 1;
+  padding-bottom: 75px; /* Space for smaller bottom nav */
+  overflow-x: hidden;
+}

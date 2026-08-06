@@ -1,0 +1,141 @@
+.checkout-page {
+  padding: 1.5rem;
+  padding-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.checkout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.checkout-header .page-title {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-subtitle {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-text);
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--border-radius-sm);
+}
+
+.checkout-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.checkout-input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.payment-method {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  transition: all 0.2s;
+}
+
+.payment-method.active {
+  border-color: var(--color-accent);
+  background: rgba(212, 175, 55, 0.05);
+}
+
+.payment-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.payment-radio {
+  accent-color: var(--color-accent);
+  width: 18px;
+  height: 18px;
+}
+
+.payment-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.place-order-btn {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  border: none;
+  color: var(--color-bg);
+  font-weight: 600;
+  font-size: 1rem;
+  font-family: var(--font-main);
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+/* Success State */
+.success-state {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 70vh;
+}
+
+.success-icon {
+  margin-bottom: 1.5rem;
+  filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.4));
+}
+
+.success-title {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.success-message {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 2.5rem;
+}
+
+.back-home-btn {
+  padding: 1rem 2.5rem;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-bg);
+  font-family: var(--font-main);
+  cursor: pointer;
+}

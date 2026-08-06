@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --color-bg: #0B0B0B;
+  --color-card: #181818;
+  --color-accent: #D4AF37; /* Metallic Gold */
+  --color-text: #FFFFFF;
+  --color-text-secondary: #AAAAAA;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-glass: rgba(24, 24, 24, 0.6);
+  --color-glass-light: rgba(255, 255, 255, 0.05);
+
+  --font-main: 'Poppins', sans-serif;
+
+  --border-radius: 24px;
+  --border-radius-sm: 12px;
+
+  --shadow-elegant: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: #000000;
+  color: var(--color-text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  background: var(--color-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-elegant);
+}
+
+.glass-light {
+  background: var(--color-glass-light);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+p {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* Scrollbar styling for a premium feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-card);
+  border-radius: var(--border-radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+/* Hover Utilities */
+.hover-scale {
+  transition: transform 0.3s ease;
+}
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+.hover-scale:active {
+  transform: scale(0.98);
+}
+
+/* App Container for Mobile-First aspect */
+#root {
+  width: 100%;
+  max-width: 480px; /* Mobile width */
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  background-color: var(--color-bg);
+  box-shadow: 0 0 40px rgba(0,0,0,1); /* For desktop view of mobile app */
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+}
+
+/* Utility Classes */
+.text-gold { color: var(--color-accent); }
+.bg-gold { background-color: var(--color-accent); }
+.radius-lg { border-radius: var(--border-radius); }
+.radius-sm { border-radius: var(--border-radius-sm); }
