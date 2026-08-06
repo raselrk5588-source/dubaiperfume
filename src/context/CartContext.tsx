@@ -254,12 +254,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const editProduct = (id: string, updates: Partial<Product>) => {
-    const updatedProducts = products.map(p => p.id === id || p.id === Number(id) ? { ...p, ...updates } : p);
+    const updatedProducts = products.map(p => p.id === String(id) ? { ...p, ...updates } : p);
     saveProducts(updatedProducts);
   };
 
   const deleteProduct = (id: string | number) => {
-    const updatedProducts = products.filter(p => p.id !== id && p.id !== Number(id) && p.id !== String(id));
+    const updatedProducts = products.filter(p => p.id !== String(id));
     saveProducts(updatedProducts);
   };
 
