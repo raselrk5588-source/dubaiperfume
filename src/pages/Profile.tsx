@@ -6,16 +6,43 @@ import './Profile.css';
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const { customerName, customerPhone, customerAddress, loginCustomer, logoutCustomer } = useCart();
+  const { customerName, customerPhone, customerAddress, loginCustomer, registerCustomer, logoutCustomer } = useCart();
+  const [isLoginMode, setIsLoginMode] = useState(true);
   const [nameInput, setNameInput] = useState('');
   const [phoneInput, setPhoneInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (nameInput.trim() && phoneInput.trim()) {
-      loginCustomer(nameInput.trim(), phoneInput.trim());
+    setErrorMsg('');
+    
+    if (!phoneInput.trim() || !passwordInput.trim()) {
+      setErrorMsg('Phone and Password are required');
+      return;
+    }
+    
+    setIsLoading(true);
+    let result;
+    if (isLoginMode) {
+      result = await loginCustomer(phoneInput.trim(), passwordInput.trim());
+    } else {
+      if (!nameInput.trim()) {
+        setErrorMsg('Name is required for Sign Up');
+        setIsLoading(false);
+        return;
+      }
+      result = await registerCustomer(nameInput.trim(), phoneInput.trim(), passwordInput.trim());
+    }
+    
+    setIsLoading(false);
+    if (!result.success) {
+      setErrorMsg(result.message);
+    } else {
       setNameInput('');
       setPhoneInput('');
+      setPasswordInput('');
     }
   };
 
@@ -26,29 +53,58 @@ const Profile: React.FC = () => {
           <div style={{width: '60px', height: '60px', borderRadius: '50%', background: 'var(--color-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px'}}>
             <User size={30} color="black" />
           </div>
-          <h2 style={{color: 'white', marginBottom: '10px'}}>Welcome Back</h2>
-          <p style={{color: 'var(--color-text-secondary)', marginBottom: '24px', fontSize: '14px'}}>Please complete your profile to continue.</p>
-          <form onSubmit={handleLoginSubmit}>
+          <h2 style={{color: 'white', marginBottom: '10px'}}>{isLoginMode ? 'Welcome Back' : 'Create Account'}</h2>
+          <p style={{color: 'var(--color-text-secondary)', marginBottom: '24px', fontSize: '14px'}}>
+            {isLoginMode ? 'Sign in to your account' : 'Sign up to get started'}
+          </p>
+          
+          {errorMsg && (
+            <div style={{background: 'rgba(255,0,0,0.1)', color: '#ff6b6b', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px', border: '1px solid rgba(255,0,0,0.2)'}}>
+              {errorMsg}
+            </div>
+          )}
+          
+          <form onSubmit={handleAuthSubmit}>
+            {!isLoginMode && (
+              <input 
+                type="text" 
+                placeholder="Full Name"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                style={{width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', marginBottom: '12px', fontSize: '15px'}}
+                required={!isLoginMode}
+              />
+            )}
             <input 
-              type="text" 
-              placeholder="Full Name (e.g. John Doe)"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
+              type="tel" 
+              placeholder="Phone Number"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value)}
               style={{width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', marginBottom: '12px', fontSize: '15px'}}
               required
             />
             <input 
-              type="tel" 
-              placeholder="Phone Number (e.g. +971...)"
-              value={phoneInput}
-              onChange={(e) => setPhoneInput(e.target.value)}
+              type="password" 
+              placeholder="Password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
               style={{width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', marginBottom: '20px', fontSize: '15px'}}
               required
             />
-            <button type="submit" style={{width: '100%', padding: '14px', borderRadius: '10px', background: 'var(--color-accent)', color: 'black', border: 'none', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer'}}>
-              Save Profile
+            <button type="submit" disabled={isLoading} style={{width: '100%', padding: '14px', borderRadius: '10px', background: 'var(--color-accent)', color: 'black', border: 'none', fontWeight: 'bold', fontSize: '16px', cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.7 : 1}}>
+              {isLoading ? 'Processing...' : (isLoginMode ? 'Sign In' : 'Sign Up')}
             </button>
           </form>
+          
+          <div style={{marginTop: '20px', fontSize: '14px', color: 'var(--color-text-secondary)'}}>
+            {isLoginMode ? "Don't have an account? " : "Already have an account? "}
+            <span 
+              onClick={() => { setIsLoginMode(!isLoginMode); setErrorMsg(''); }} 
+              style={{color: 'var(--color-accent)', cursor: 'pointer', fontWeight: 'bold'}}
+            >
+              {isLoginMode ? 'Sign Up' : 'Sign In'}
+            </span>
+          </div>
         </div>
       </div>
     );

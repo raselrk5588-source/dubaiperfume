@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { db } from '../firebase';
-import { ref, set, onValue } from 'firebase/database';
+import { ref, set, onValue, get, child } from 'firebase/database';
 
 export interface Product {
   id: string;
@@ -62,7 +62,8 @@ interface CartContextType {
   customerPhone: string | null;
   customerAddress: string | null;
   notifications: AppNotification[];
-  loginCustomer: (name: string, phone: string) => void;
+  loginCustomer: (phone: string, password: string) => Promise<{success: boolean; message: string}>;
+  registerCustomer: (name: string, phone: string, password: string) => Promise<{success: boolean; message: string}>;
   saveCustomerAddress: (address: string) => void;
   logoutCustomer: () => void;
   markNotificationsAsRead: () => void;
@@ -87,11 +88,50 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [customerPhone, setCustomerPhone] = useState<string | null>(localStorage.getItem('customerPhone'));
   const [customerAddress, setCustomerAddress] = useState<string | null>(localStorage.getItem('customerAddress'));
 
-  const loginCustomer = (name: string, phone: string) => {
-    localStorage.setItem('customerName', name);
-    localStorage.setItem('customerPhone', phone);
-    setCustomerName(name);
-    setCustomerPhone(phone);
+  const loginCustomer = async (phone: string, password: string) => {
+    try {
+      const dbRef = ref(db);
+      const snapshot = await get(child(dbRef, `users/${phone}`));
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        if (userData.password === password) {
+          localStorage.setItem('customerName', userData.name);
+          localStorage.setItem('customerPhone', phone);
+          setCustomerName(userData.name);
+          setCustomerPhone(phone);
+          return { success: true, message: 'Login successful' };
+        } else {
+          return { success: false, message: 'Invalid password' };
+        }
+      } else {
+        return { success: false, message: 'User not found. Please sign up.' };
+      }
+    } catch (error) {
+      console.error(error);
+      return { success: false, message: 'An error occurred during login.' };
+    }
+  };
+
+  const registerCustomer = async (name: string, phone: string, password: string) => {
+    try {
+      const dbRef = ref(db);
+      const snapshot = await get(child(dbRef, `users/${phone}`));
+      if (snapshot.exists()) {
+        return { success: false, message: 'Phone number already registered. Please login.' };
+      } else {
+        const userData = { name, password, phone };
+        await set(ref(db, `users/${phone}`), userData);
+        
+        localStorage.setItem('customerName', name);
+        localStorage.setItem('customerPhone', phone);
+        setCustomerName(name);
+        setCustomerPhone(phone);
+        return { success: true, message: 'Registration successful' };
+      }
+    } catch (error) {
+      console.error(error);
+      return { success: false, message: 'An error occurred during registration.' };
+    }
   };
 
   const saveCustomerAddress = (address: string) => {
@@ -267,7 +307,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     <CartContext.Provider value={{ 
       cart, orders, products, notifications,
       addToCart, removeFromCart, updateQuantity, placeOrder, updateOrderStatus, addProduct, addMultipleProducts, editProduct, deleteProduct,
-      totalItems, customerName, customerPhone, customerAddress, loginCustomer, saveCustomerAddress, logoutCustomer, markNotificationsAsRead
+      totalItems, customerName, customerPhone, customerAddress, loginCustomer, registerCustomer, saveCustomerAddress, logoutCustomer, markNotificationsAsRead
     }}>
       {children}
     </CartContext.Provider>
